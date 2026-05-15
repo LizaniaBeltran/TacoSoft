@@ -322,3 +322,37 @@ EXCEPTION
         RAISE EXCEPTION 'Error al crear producto: %', SQLERRM;
 END;
 $$;
+
+
+
+CREATE OR REPLACE PROCEDURE sp_cancelar_pedido(
+    p_pedido_id INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_estatus VARCHAR(30);
+BEGIN
+
+    SELECT estatus
+    INTO v_estatus
+    FROM pedido
+    WHERE pedido_id = p_pedido_id;
+
+    IF v_estatus IS NULL THEN
+        RAISE EXCEPTION 'El pedido no existe';
+    END IF;
+
+    IF v_estatus = 'entregado' THEN
+        RAISE EXCEPTION 'No se puede cancelar un pedido entregado';
+    END IF;
+
+    UPDATE pedido
+    SET estatus = 'cancelado'
+    WHERE pedido_id = p_pedido_id;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE EXCEPTION 'Error al cancelar pedido: %', SQLERRM;
+END;
+$$;
