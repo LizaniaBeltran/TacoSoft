@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TacoSoft - Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="d-flex">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <i class="bi bi-shop"></i>
+        <span>TacoSoft</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-item active"><i class="bi bi-grid"></i><span>Dashboard</span></a>
+        <a href="index.html" class="nav-item"><i class="bi bi-cart3"></i><span>Punto de Venta</span></a>
+        <a href="#productos" class="nav-item module-link" data-module="Productos"><i class="bi bi-box-seam"></i><span>Productos</span></a>
+        <a href="#categorias" class="nav-item module-link" data-module="Categorías"><i class="bi bi-diagram-3"></i><span>Categorías</span></a>
+        <a href="#sucursales" class="nav-item module-link" data-module="Sucursales"><i class="bi bi-building"></i><span>Sucursales</span></a>
+        <a href="#empleados" class="nav-item module-link" data-module="Empleados"><i class="bi bi-person-badge"></i><span>Empleados</span></a>
+        <a href="#clientes" class="nav-item module-link" data-module="Clientes"><i class="bi bi-people"></i><span>Clientes</span></a>
+        <a href="#pedidos" class="nav-item module-link" data-module="Pedidos"><i class="bi bi-receipt"></i><span>Pedidos</span></a>
+        <a href="#promociones" class="nav-item module-link" data-module="Promociones"><i class="bi bi-tags"></i><span>Promociones</span></a>
+        <a href="#reportes" class="nav-item module-link" data-module="Reportes"><i class="bi bi-graph-up"></i><span>Reportes</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="login.html" class="nav-item"><i class="bi bi-box-arrow-left"></i><span>Cerrar Sesión</span></a>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <button class="sidebar-toggle" id="sidebarToggle" type="button"><i class="bi bi-list"></i></button>
+        <div class="topbar-search">
+          <i class="bi bi-search"></i>
+          <input type="text" placeholder="Buscar pedido, producto o cliente..." id="dashboardSearch">
+        </div>
+        <div class="topbar-right">
+          <div class="user-avatar">
+            <img src="https://ui-avatars.com/api/?name=Admin+Taco&background=86a331&color=ffffff&size=40" alt="Admin">
+            <span>Admin</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="content">
+        <section class="dashboard-hero">
+          <div class="hero-panel">
+            <span class="soft-pill mb-3"><i class="bi bi-database-check"></i> Datos simulados PostgreSQL</span>
+            <h1>Panel administrativo alineado a TacoSoft.</h1>
+            <p>Vista basada en sucursales, categorías, productos, empleados, clientes, pedidos, detalle de pedido y promociones.</p>
+            <div class="hero-badges">
+              <span class="soft-pill"><i class="bi bi-building"></i> 3 sucursales activas</span>
+              <span class="soft-pill"><i class="bi bi-receipt"></i> 128 pedidos</span>
+              <span class="soft-pill"><i class="bi bi-tags"></i> 4 promociones vigentes</span>
+            </div>
+            <div class="hero-food"><i class="bi bi-egg-fried"></i></div>
+          </div>
+          <div class="promo-panel">
+            <span class="soft-pill mb-3"><i class="bi bi-percent"></i> sp_aplicar_promocion</span>
+            <h5>Promoción vigente</h5>
+            <p>Combo Pastor aplica descuento simulado sobre productos asociados en `promocion_producto`.</p>
+            <button class="btn btn-primary btn-sm" id="viewPromoBtn" type="button">Ver promoción</button>
+          </div>
+        </section>
+
+        <div class="row g-3 mb-4">
+          <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+              <div class="stat-icon bg-primary-subtle"><i class="bi bi-currency-dollar text-primary"></i></div>
+              <div class="stat-info">
+                <span class="stat-label">Ventas Totales</span>
+                <h3 class="stat-value">$42,860</h3>
+                <span class="stat-change up"><i class="bi bi-arrow-up"></i> +11.8%</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+              <div class="stat-icon bg-warning-subtle"><i class="bi bi-receipt text-warning"></i></div>
+              <div class="stat-info">
+                <span class="stat-label">Total de Pedidos</span>
+                <h3 class="stat-value">128</h3>
+                <span class="stat-change up"><i class="bi bi-arrow-up"></i> +7.4%</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+              <div class="stat-icon bg-success-subtle"><i class="bi bi-building text-success"></i></div>
+              <div class="stat-info">
+                <span class="stat-label">Sucursales Activas</span>
+                <h3 class="stat-value">3</h3>
+                <span class="stat-change up"><i class="bi bi-check-circle"></i> Operando</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+              <div class="stat-icon bg-info-subtle"><i class="bi bi-tags text-info"></i></div>
+              <div class="stat-info">
+                <span class="stat-label">Promociones Vigentes</span>
+                <h3 class="stat-value">4</h3>
+                <span class="stat-change up"><i class="bi bi-calendar-check"></i> Activas</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-lg-8">
+            <div class="card h-100">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Tabla de Pedidos Recientes</h5>
+                <select class="form-select form-select-sm filter-select" id="statusFilter">
+                  <option value="todos">Todos</option>
+                  <option value="Confirmado">Confirmados</option>
+                  <option value="Pendiente">Pendientes</option>
+                  <option value="Cancelado">Cancelados</option>
+                </select>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table custom-table mb-0">
+                    <thead>
+                      <tr>
+                        <th>Pedido</th>
+                        <th>Sucursal</th>
+                        <th>Cliente</th>
+                        <th>Empleado</th>
+                        <th>Tipo</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recentOrdersBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="card h-100">
+              <div class="card-header">
+                <h5 class="mb-0">Productos Más Vendidos</h5>
+              </div>
+              <div class="card-body" id="topProductsList"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="card h-100">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Sucursales</h5>
+                <button class="btn btn-primary btn-sm simulate-sp" data-sp="sp_crear_sucursal" type="button">Nueva sucursal</button>
+              </div>
+              <div class="card-body d-grid gap-3" id="branchesList"></div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="card h-100">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Promociones</h5>
+                <button class="btn btn-primary btn-sm simulate-sp" data-sp="sp_crear_promocion" type="button">Nueva promoción</button>
+              </div>
+              <div class="card-body d-grid gap-3" id="promotionsList"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="appToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-body" id="toastMessage">Acción simulada</div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

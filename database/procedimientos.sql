@@ -356,3 +356,133 @@ EXCEPTION
         RAISE EXCEPTION 'Error al cancelar pedido: %', SQLERRM;
 END;
 $$;
+
+
+---------------------------------------------------
+------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE sp_crear_promocion(
+    p_nombre VARCHAR,
+    p_descripcion TEXT,
+    p_porcentaje_descuento NUMERIC,
+    p_fecha_inicio DATE,
+    p_fecha_fin DATE
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF p_nombre IS NULL OR TRIM(p_nombre) = '' THEN
+        RAISE EXCEPTION 'El nombre de la promoción no puede estar vacío';
+    END IF;
+
+    IF p_porcentaje_descuento <= 0 OR p_porcentaje_descuento > 100 THEN
+        RAISE EXCEPTION 'El porcentaje debe estar entre 1 y 100';
+    END IF;
+
+    IF p_fecha_fin < p_fecha_inicio THEN
+        RAISE EXCEPTION 'La fecha fin no puede ser menor que la fecha inicio';
+    END IF;
+
+    INSERT INTO promocion(
+        nombre,
+        descripcion,
+        porcentaje_descuento,
+        fecha_inicio,
+        fecha_fin
+    )
+    VALUES(
+        p_nombre,
+        p_descripcion,
+        p_porcentaje_descuento,
+        p_fecha_inicio,
+        p_fecha_fin
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE EXCEPTION 'Error al crear promoción: %', SQLERRM;
+END;
+$$;
+
+
+CREATE OR REPLACE PROCEDURE sp_agregar_producto_promocion(
+    p_promocion_id INT,
+    p_producto_id INT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM promocion WHERE promocion_id = p_promocion_id) THEN
+        RAISE EXCEPTION 'La promoción no existe';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM producto WHERE producto_id = p_producto_id) THEN
+        RAISE EXCEPTION 'El producto no existe';
+    END IF;
+
+    INSERT INTO promocion_producto(
+        promocion_id,
+        producto_id
+    )
+    VALUES(
+        p_promocion_id,
+        p_producto_id
+    );
+
+EXCEPTION
+    WHEN unique_violation THEN
+        RAISE EXCEPTION 'El producto ya está agregado a esta promoción';
+    WHEN OTHERS THEN
+        RAISE EXCEPTION 'Error al agregar producto a promoción: %', SQLERRM;
+END;
+$$;
+
+
+--------------------------------------------------------
+----------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE sp_aplicar_promocion(
+    p_pedido_id INT,
+    p_promocion_id INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_descuento NUMERIC(5,2);
+    v_monto_descuento NUMERIC(10,2);
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pedido WHERE pedido_id = p_pedido_id) THEN
+        RAISE EXCEPTION 'El pedido no existe';
+    END IF;
+
+    SELECT porcentaje_descuento
+    INTO v_descuento
+    FROM promocion
+    WHERE promocion_id = p_promocion_id
+      AND CURRENT_DATE BETWEEN fecha_inicio AND fecha_fin;
+
+    IF v_descuento IS NULL THEN
+        RAISE EXCEPTION 'La promoción no existe o no está vigente';
+    END IF;
+
+    SELECT COALESCE(SUM(dp.subtotal * (v_descuento / 100)), 0)
+    INTO v_monto_descuento
+    FROM detalle_pedido dp
+    INNER JOIN promocion_producto pp 
+        ON dp.producto_id = pp.producto_id
+    WHERE dp.pedido_id = p_pedido_id
+      AND pp.promocion_id = p_promocion_id;
+
+    IF v_monto_descuento = 0 THEN
+        RAISE EXCEPTION 'El pedido no tiene productos aplicables a esta promoción';
+    END IF;
+
+    UPDATE pedido
+    SET total = total - v_monto_descuento
+    WHERE pedido_id = p_pedido_id;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE EXCEPTION 'Error al aplicar promoción: %', SQLERRM;
+END;
+$$;
