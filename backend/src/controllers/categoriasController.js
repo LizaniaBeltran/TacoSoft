@@ -20,6 +20,16 @@ const obtenerCategorias = async (req, res) => {
   }
 };
 
+const crearCategoria = async (req, res) => {
+  try {
+    const categoria = await categoriasService.crearCategoria(req.body);
+    res.status(201).json({ ok: true, data: categoria });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+};
+
 module.exports = {
-  obtenerCategorias
+  obtenerCategorias,
+  crearCategoria
 };

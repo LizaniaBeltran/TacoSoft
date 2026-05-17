@@ -20,6 +20,16 @@ const obtenerSucursales = async (req, res) => {
   }
 };
 
+const crearSucursal = async (req, res) => {
+  try {
+    const sucursal = await sucursalesService.crearSucursal(req.body);
+    res.status(201).json({ ok: true, data: sucursal });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+};
+
 module.exports = {
-  obtenerSucursales
+  obtenerSucursales,
+  crearSucursal
 };

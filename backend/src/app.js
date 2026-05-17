@@ -5,6 +5,10 @@ const pool = require('./config/db');
 const productosRoutes = require('./routes/productosRoutes');
 const categoriasRoutes = require('./routes/categoriasRoutes');
 const sucursalesRoutes = require('./routes/sucursalesRoutes');
+const empleadosRoutes = require('./routes/empleadosRoutes');
+const promocionesRoutes = require('./routes/promocionesRoutes');
+const pedidosRoutes = require('./routes/pedidosRoutes');
+const clientesRoutes = require('./routes/clientesRoutes');
 const app = express();
 
 app.use(cors());
@@ -12,6 +16,10 @@ app.use(express.json());
 app.use('/api/productos', productosRoutes);
 app.use('/api/categorias', categoriasRoutes);
 app.use('/api/sucursales', sucursalesRoutes);
+app.use('/api/empleados', empleadosRoutes);
+app.use('/api/promociones', promocionesRoutes);
+app.use('/api/pedidos', pedidosRoutes);
+app.use('/api/clientes', clientesRoutes);
 app.get('/test-db', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW()');

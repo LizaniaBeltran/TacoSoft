@@ -51,7 +51,7 @@
         <section class="dashboard-hero">
           <div class="hero-panel dashboard-hero-panel">
             <div class="hero-copy">
-              <span class="soft-pill mb-3"><i class="bi bi-database-check"></i> Datos simulados PostgreSQL</span>
+              <span class="soft-pill mb-3"><i class="bi bi-database-check"></i> PostgreSQL conectado</span>
               <h1>Panel administrativo alineado a TacoSoft.</h1>
               <p>Vista basada en sucursales, categorías, productos, empleados, clientes, pedidos, detalle de pedido y promociones.</p>
               <div class="hero-badges">
@@ -67,7 +67,7 @@
           <div class="promo-panel">
             <span class="soft-pill mb-3"><i class="bi bi-percent"></i> sp_aplicar_promocion</span>
             <h5>Promoción vigente</h5>
-            <p>Combo Pastor aplica descuento simulado sobre productos asociados en `promocion_producto`.</p>
+            <p>Combo Pastor aplica descuento sobre productos asociados en `promocion_producto`.</p>
             <button class="btn btn-primary btn-sm" id="viewPromoBtn" type="button">Ver promoción</button>
           </div>
         </section>
@@ -77,9 +77,9 @@
             <div class="stat-card">
               <div class="stat-icon bg-primary-subtle"><i class="bi bi-currency-dollar text-primary"></i></div>
               <div class="stat-info">
-                <span class="stat-label">Ventas Totales</span>
-                <h3 class="stat-value">$42,860</h3>
-                <span class="stat-change up"><i class="bi bi-arrow-up"></i> +11.8%</span>
+                <span class="stat-label">Total de ventas</span>
+                <h3 class="stat-value" id="statVentas">$0.00</h3>
+                <span class="stat-change up">pedido.total</span>
               </div>
             </div>
           </div>
@@ -87,19 +87,39 @@
             <div class="stat-card">
               <div class="stat-icon bg-warning-subtle"><i class="bi bi-receipt text-warning"></i></div>
               <div class="stat-info">
-                <span class="stat-label">Total de Pedidos</span>
-                <h3 class="stat-value">128</h3>
-                <span class="stat-change up"><i class="bi bi-arrow-up"></i> +7.4%</span>
+                <span class="stat-label">Total de pedidos</span>
+                <h3 class="stat-value" id="statPedidos">0</h3>
+                <span class="stat-change up">pedido</span>
               </div>
             </div>
           </div>
           <div class="col-xl-3 col-md-6">
             <div class="stat-card">
-              <div class="stat-icon bg-success-subtle"><i class="bi bi-building text-success"></i></div>
+              <div class="stat-icon bg-warning-subtle"><i class="bi bi-hourglass-split text-warning"></i></div>
               <div class="stat-info">
-                <span class="stat-label">Sucursales Activas</span>
-                <h3 class="stat-value">3</h3>
-                <span class="stat-change up"><i class="bi bi-check-circle"></i> Operando</span>
+                <span class="stat-label">Pedidos pendientes</span>
+                <h3 class="stat-value" id="statPendientes">0</h3>
+                <span class="stat-change up">estatus pendiente</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+              <div class="stat-icon bg-info-subtle"><i class="bi bi-x-circle text-info"></i></div>
+              <div class="stat-info">
+                <span class="stat-label">Pedidos cancelados</span>
+                <h3 class="stat-value" id="statCancelados">0</h3>
+                <span class="stat-change down">estatus cancelado</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+              <div class="stat-icon bg-success-subtle"><i class="bi bi-box-seam text-success"></i></div>
+              <div class="stat-info">
+                <span class="stat-label">Productos disponibles</span>
+                <h3 class="stat-value" id="statProductos">0</h3>
+                <span class="stat-change up">producto.estatus</span>
               </div>
             </div>
           </div>
@@ -107,9 +127,19 @@
             <div class="stat-card">
               <div class="stat-icon bg-info-subtle"><i class="bi bi-tags text-info"></i></div>
               <div class="stat-info">
-                <span class="stat-label">Promociones Vigentes</span>
-                <h3 class="stat-value">4</h3>
-                <span class="stat-change up"><i class="bi bi-calendar-check"></i> Activas</span>
+                <span class="stat-label">Promociones vigentes</span>
+                <h3 class="stat-value" id="statPromociones">0</h3>
+                <span class="stat-change up">promocion</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+              <div class="stat-icon bg-success-subtle"><i class="bi bi-building text-success"></i></div>
+              <div class="stat-info">
+                <span class="stat-label">Sucursales activas</span>
+                <h3 class="stat-value" id="statSucursales">0</h3>
+                <span class="stat-change up">sucursal.estatus</span>
               </div>
             </div>
           </div>
@@ -122,9 +152,11 @@
                 <h5 class="mb-0">Tabla de Pedidos Recientes</h5>
                 <select class="form-select form-select-sm filter-select" id="statusFilter">
                   <option value="todos">Todos</option>
-                  <option value="Confirmado">Confirmados</option>
-                  <option value="Pendiente">Pendientes</option>
-                  <option value="Cancelado">Cancelados</option>
+                  <option value="pendiente">Pendientes</option>
+                  <option value="preparando">Preparando</option>
+                  <option value="listo">Listos</option>
+                  <option value="entregado">Entregados</option>
+                  <option value="cancelado">Cancelados</option>
                 </select>
               </div>
               <div class="card-body p-0">
@@ -132,13 +164,14 @@
                   <table class="table custom-table mb-0">
                     <thead>
                       <tr>
-                        <th>Pedido</th>
+                        <th>pedido_id</th>
                         <th>Sucursal</th>
-                        <th>Cliente</th>
                         <th>Empleado</th>
+                        <th>Cliente</th>
                         <th>Tipo</th>
-                        <th>Total</th>
                         <th>Estado</th>
+                        <th>Total</th>
+                        <th>fecha_hora</th>
                       </tr>
                     </thead>
                     <tbody id="recentOrdersBody"></tbody>
@@ -183,7 +216,7 @@
 
   <div class="toast-container position-fixed bottom-0 end-0 p-3">
     <div id="appToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="toast-body" id="toastMessage">Acción simulada</div>
+      <div class="toast-body" id="toastMessage">Acción realizada</div>
     </div>
   </div>
 
