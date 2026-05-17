@@ -12,17 +12,53 @@ document.addEventListener('DOMContentLoaded', () => {
     { id_categoria: 4, nombre: 'Complementos', descripcion: 'Productos adicionales para acompañar pedidos.' },
   ];
 
-  const productos = [
-    { id_producto: 1, id_categoria: 1, nombre: 'Taco al Pastor', precio: 35, costo: 18, estatus: 'Activo', disponible: true, icon: 'bi-egg-fried' },
-    { id_producto: 2, id_categoria: 1, nombre: 'Taco de Suadero', precio: 38, costo: 20, estatus: 'Activo', disponible: true, icon: 'bi-egg-fried' },
-    { id_producto: 3, id_categoria: 1, nombre: 'Taco de Barbacoa', precio: 42, costo: 24, estatus: 'Activo', disponible: true, icon: 'bi-egg-fried' },
-    { id_producto: 4, id_categoria: 2, nombre: 'Torta al Pastor', precio: 68, costo: 38, estatus: 'Activo', disponible: true, icon: 'bi-bread' },
-    { id_producto: 5, id_categoria: 2, nombre: 'Torta de Suadero', precio: 72, costo: 41, estatus: 'Activo', disponible: true, icon: 'bi-bread' },
-    { id_producto: 6, id_categoria: 3, nombre: 'Agua de Horchata', precio: 24, costo: 9, estatus: 'Activo', disponible: true, icon: 'bi-cup-straw' },
-    { id_producto: 7, id_categoria: 3, nombre: 'Agua de Jamaica', precio: 24, costo: 8, estatus: 'Activo', disponible: true, icon: 'bi-cup-straw' },
-    { id_producto: 8, id_categoria: 4, nombre: 'Orden de Guacamole', precio: 45, costo: 25, estatus: 'Activo', disponible: true, icon: 'bi-basket' },
-    { id_producto: 9, id_categoria: 4, nombre: 'Frijoles Charros', precio: 40, costo: 21, estatus: 'Activo', disponible: true, icon: 'bi-bowl-hot' },
-  ];
+let productos = [];
+
+async function cargarProductosAPI() {
+
+    try {
+
+        const response = await fetch("http://localhost:3000/api/productos");
+
+        const resultado = await response.json();
+
+        console.log("Productos desde API:", resultado);
+
+        if (resultado.ok) {
+
+            productos = resultado.data.map(producto => ({
+
+                id_producto: producto.producto_id,
+
+                id_categoria: producto.categoria_id,
+
+                nombre: producto.nombre,
+
+                descripcion: producto.descripcion,
+
+                precio: Number(producto.precio_actual),
+
+                costo: Number(producto.costo_preparacion),
+
+                estatus: producto.estatus,
+
+                disponible: producto.estatus === 'disponible',
+
+                icon: 'bi-egg-fried'
+
+            }));
+
+            renderProducts();
+
+        }
+
+    } catch (error) {
+
+        console.error("Error cargando productos:", error);
+
+    }
+
+}
 
   const empleados = [
     { id_empleado: 1, id_sucursal: 1, nombre: 'Luis Herrera', puesto: 'Cajero', salario: 9800, estatus: 'Activo' },
@@ -520,6 +556,6 @@ document.addEventListener('DOMContentLoaded', () => {
   renderDashboard();
   fillSelects();
   renderCategories();
-  renderProducts();
+  cargarProductosAPI();
   renderCart();
 });
