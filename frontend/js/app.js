@@ -1,5 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
   const API_BASE_URL = 'http://localhost:3000/api';
+  const currentPage = window.location.pathname.split('/').pop() || 'login.html';
+
+  if (currentPage !== 'login.html' && !localStorage.getItem('usuarioLogueado')) {
+    window.location.href = 'login.html';
+    return;
+  }
 
   let sucursales = [];
   let categorias = [];
@@ -730,10 +736,26 @@ async function cargarProductosAPI() {
   if (loginForm) {
     loginForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      showToast('Iniciando sesión');
-      setTimeout(() => { window.location.href = 'dashboard.html'; }, 450);
+      const username = document.getElementById('username')?.value.trim();
+      const password = document.getElementById('password')?.value.trim();
+
+      if (username === 'admin' && password === 'admin123') {
+        localStorage.setItem('usuarioLogueado', 'admin');
+        window.location.href = 'dashboard.html';
+        return;
+      }
+
+      showToast('Usuario o contraseña incorrectos');
     });
   }
+
+  document.querySelectorAll('.logout-link').forEach(link => {
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      localStorage.removeItem('usuarioLogueado');
+      window.location.href = 'login.html';
+    });
+  });
 
   document.querySelectorAll('.module-link').forEach(link => {
     link.addEventListener('click', (event) => {
