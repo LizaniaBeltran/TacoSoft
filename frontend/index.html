@@ -53,7 +53,7 @@
             <div>
               <span class="soft-pill mb-2"><i class="bi bi-receipt-cutoff"></i> sp_nuevo_pedido</span>
               <h1 class="pos-title mb-1">Punto de Venta</h1>
-              <p class="pos-subtitle mb-0">Crea pedidos con sucursal, empleado, cliente opcional, detalle y promoción simulada.</p>
+              <p class="pos-subtitle mb-0">Crea pedidos con sucursal, empleado, cliente opcional, detalle y promoción.</p>
             </div>
             <div class="pos-mascot" aria-hidden="true">
               <img src="assets/burrito-animado.gif" alt="" class="decor-gif decor-gif-burrito">
@@ -126,6 +126,9 @@
             <button class="btn btn-outline-secondary w-100 mt-3" id="applyPromoBtn" type="button" disabled>
               <i class="bi bi-tags me-2"></i>Aplicar promoción
             </button>
+            <button class="btn btn-outline-secondary w-100 mt-2" id="clearCartBtn" type="button" disabled>
+              <i class="bi bi-trash me-2"></i>Limpiar carrito
+            </button>
             <button class="btn btn-primary w-100 mt-2" id="checkoutBtn" type="button" disabled>
               <i class="bi bi-check2-circle me-2"></i>Confirmar pedido
             </button>
@@ -137,7 +140,7 @@
 
   <div class="toast-container position-fixed bottom-0 end-0 p-3">
     <div id="appToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="toast-body" id="toastMessage">Acción simulada</div>
+      <div class="toast-body" id="toastMessage">Acción realizada</div>
     </div>
   </div>
 
