@@ -148,6 +148,12 @@ const entregarPedido = async (pedidoId) => {
   return obtenerPedido(pedidoId);
 };
 
+const cancelarPendientes24h = async () => {
+  // Backend -> PostgreSQL: ejecuta procedimiento almacenado para cancelar pedidos pendientes +24h.
+  const result = await pool.query('CALL sp_cancelar_pedidos_pendientes_24h($1)', [0]);
+  return Number(result.rows?.[0]?.p_cancelados || 0);
+};
+
 module.exports = {
   obtenerPedidos,
   obtenerDetallePedido,
@@ -157,5 +163,6 @@ module.exports = {
   cancelarPedido,
   prepararPedido,
   marcarPedidoListo,
-  entregarPedido
+  entregarPedido,
+  cancelarPendientes24h
 };

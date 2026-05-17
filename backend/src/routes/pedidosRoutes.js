@@ -8,7 +8,8 @@ const {
   cancelarPedido,
   prepararPedido,
   marcarPedidoListo,
-  entregarPedido
+  entregarPedido,
+  cancelarPendientes24h
 } = require('../controllers/pedidosController');
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.get('/detalle', obtenerDetallePedido);
 router.post('/', crearPedido);
 router.post('/:id/productos', agregarProductoPedido);
 router.post('/:id/promocion', aplicarPromocion);
+router.patch('/cancelar-pendientes-24h', cancelarPendientes24h);
 router.patch('/:id/preparar', prepararPedido);
 router.patch('/:id/listo', marcarPedidoListo);
 router.patch('/:id/entregar', entregarPedido);

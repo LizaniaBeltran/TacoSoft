@@ -135,6 +135,25 @@ async function cargarProductosAPI() {
     }
 }
 
+  async function cargarReportesAPI(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.fecha_inicio) params.set('fecha_inicio', filters.fecha_inicio);
+    if (filters.fecha_fin) params.set('fecha_fin', filters.fecha_fin);
+    if (filters.sucursal_id) params.set('sucursal_id', filters.sucursal_id);
+    const query = params.toString() ? `?${params.toString()}` : '';
+
+    const [ventasSucursal, productosMasVendidos, ventasCategoria, rendimientoEmpleados, comparativoMensual, productosSinMovimiento] = await Promise.all([
+      apiRequest(`/reportes/ventas-sucursal${query}`),
+      apiRequest(`/reportes/productos-mas-vendidos${query}`),
+      apiRequest(`/reportes/ventas-categoria${query}`),
+      apiRequest(`/reportes/rendimiento-empleados${query}`),
+      apiRequest(`/reportes/comparativo-mensual${query}`),
+      apiRequest(`/reportes/productos-sin-movimiento${query}`)
+    ]);
+
+    reportesData = { ventasSucursal, productosMasVendidos, ventasCategoria, rendimientoEmpleados, comparativoMensual, productosSinMovimiento };
+  }
+
   function getProductIcon(nombre = '', categoriaId) {
     const text = nombre.toLowerCase();
     if (text.includes('coca') || text.includes('refresco') || categoriaId === 3) return 'bi-cup-straw';
@@ -151,6 +170,7 @@ async function cargarProductosAPI() {
   let promociones = [];
   let pedidos = [];
   let detallePedido = [];
+  let reportesData = null;
 
   let carrito = [];
   let categoriaActual = 'todos';
@@ -317,41 +337,15 @@ async function cargarProductosAPI() {
   }
 
   function renderReports() {
-    const ventasSucursal = sucursales.map(sucursal => {
-      const ps = pedidos.filter(pedido => pedido.id_sucursal === sucursal.id_sucursal);
-      const total = ps.reduce((sum, pedido) => sum + Number(pedido.total), 0);
-      return { sucursal: sucursal.nombre, total_pedidos: ps.length, total_vendido: total, ticket_promedio: ps.length ? total / ps.length : 0 };
-    });
-
-    const ventasCategoria = categorias.map(categoria => {
-      const total = detallePedido.filter(detalle => productos.find(producto => producto.id_producto === detalle.id_producto)?.id_categoria === categoria.id_categoria).reduce((sum, detalle) => sum + Number(detalle.subtotal), 0);
-      return { categoria: categoria.nombre, total_vendido: total };
-    });
-
-    const rendimiento = empleados.map(empleado => {
-      const ps = pedidos.filter(pedido => pedido.id_empleado === empleado.id_empleado);
-      const total = ps.reduce((sum, pedido) => sum + Number(pedido.total), 0);
-      return { empleado: empleado.nombre, pedidos_atendidos: ps.length, total_vendido: total, ticket_promedio: ps.length ? total / ps.length : 0 };
-    });
-
-    const monthly = pedidos.reduce((acc, pedido) => {
-      const mes = pedido.fecha_raw ? String(pedido.fecha_raw).slice(0, 7) : 'Sin fecha';
-      const key = `${mes}|${getSucursal(pedido.id_sucursal)}`;
-      acc[key] = acc[key] || { mes, sucursal: getSucursal(pedido.id_sucursal), total_vendido: 0 };
-      acc[key].total_vendido += Number(pedido.total);
-      return acc;
-    }, {});
-
-    const sinMovimiento = productos.filter(producto => !detallePedido.some(detalle => detalle.id_producto === producto.id_producto));
-
+    const data = reportesData || { ventasSucursal: [], productosMasVendidos: [], ventasCategoria: [], rendimientoEmpleados: [], comparativoMensual: [], productosSinMovimiento: [] };
     return `
       <div class="d-grid gap-3">
-        ${table(['sucursal', 'total_pedidos', 'total_vendido', 'ticket_promedio'], ventasSucursal.map(item => `<tr><td>${item.sucursal}</td><td>${item.total_pedidos}</td><td>${money(item.total_vendido)}</td><td>${money(item.ticket_promedio)}</td></tr>`).join(''))}
-        ${table(['producto', 'categoría', 'cantidad_vendida', 'total_vendido'], topProducts().map(item => `<tr><td>${item.nombre}</td><td>${getCategoria(item.id_categoria)}</td><td>${item.cantidad}</td><td>${money(item.total)}</td></tr>`).join(''))}
-        ${table(['categoría', 'total_vendido'], ventasCategoria.map(item => `<tr><td>${item.categoria}</td><td>${money(item.total_vendido)}</td></tr>`).join(''))}
-        ${table(['empleado', 'pedidos_atendidos', 'total_vendido', 'ticket_promedio'], rendimiento.map(item => `<tr><td>${item.empleado}</td><td>${item.pedidos_atendidos}</td><td>${money(item.total_vendido)}</td><td>${money(item.ticket_promedio)}</td></tr>`).join(''))}
-        ${table(['mes', 'sucursal', 'total_vendido'], Object.values(monthly).map(item => `<tr><td>${item.mes}</td><td>${item.sucursal}</td><td>${money(item.total_vendido)}</td></tr>`).join(''))}
-        ${table(['producto', 'categoría', 'estatus'], sinMovimiento.map(item => `<tr><td>${item.nombre}</td><td>${getCategoria(item.id_categoria)}</td><td>${item.estatus}</td></tr>`).join(''))}
+        ${table(['sucursal', 'total_pedidos', 'total_vendido', 'ticket_promedio'], data.ventasSucursal.map(item => `<tr><td>${item.sucursal}</td><td>${item.total_pedidos}</td><td>${money(item.total_vendido)}</td><td>${money(item.ticket_promedio)}</td></tr>`).join(''))}
+        ${table(['producto', 'categoría', 'cantidad_vendida', 'total_vendido'], data.productosMasVendidos.map(item => `<tr><td>${item.producto}</td><td>${item.categoria}</td><td>${item.cantidad_vendida}</td><td>${money(item.total_vendido)}</td></tr>`).join(''))}
+        ${table(['categoría', 'total_vendido'], data.ventasCategoria.map(item => `<tr><td>${item.categoria}</td><td>${money(item.total_vendido)}</td></tr>`).join(''))}
+        ${table(['empleado', 'pedidos_atendidos', 'total_vendido', 'ticket_promedio'], data.rendimientoEmpleados.map(item => `<tr><td>${item.empleado}</td><td>${item.pedidos_atendidos}</td><td>${money(item.total_vendido)}</td><td>${money(item.ticket_promedio)}</td></tr>`).join(''))}
+        ${table(['mes', 'sucursal', 'total_vendido'], data.comparativoMensual.map(item => `<tr><td>${item.mes}</td><td>${item.sucursal}</td><td>${money(item.total_vendido)}</td></tr>`).join(''))}
+        ${table(['producto', 'categoría', 'estatus'], data.productosSinMovimiento.map(item => `<tr><td>${item.producto}</td><td>${item.categoria}</td><td>${item.estatus}</td></tr>`).join(''))}
       </div>
     `;
   }
@@ -368,7 +362,7 @@ async function cargarProductosAPI() {
       Sucursales: '<button class="btn btn-primary module-action" data-action="sp_crear_sucursal" type="button"><i class="bi bi-plus-lg me-1"></i>Nueva sucursal</button>',
       Empleados: '<button class="btn btn-primary module-action" data-action="sp_crear_empleado" type="button"><i class="bi bi-plus-lg me-1"></i>Nuevo empleado</button>',
       Clientes: '',
-      Pedidos: '<button class="btn btn-primary module-action" data-action="sp_nuevo_pedido" type="button"><i class="bi bi-plus-lg me-1"></i>Nuevo pedido</button>',
+      Pedidos: '<div class="d-flex flex-wrap gap-2"><button class="btn btn-outline-secondary module-action" data-action="cancelar_pendientes_24h" type="button"><i class="bi bi-clock-history me-1"></i>Cancelar pendientes +24h</button><button class="btn btn-primary module-action" data-action="sp_nuevo_pedido" type="button"><i class="bi bi-plus-lg me-1"></i>Nuevo pedido</button></div>',
       Promociones: '<button class="btn btn-primary module-action" data-action="sp_crear_promocion" type="button"><i class="bi bi-plus-lg me-1"></i>Nueva promoción</button>',
     };
 
@@ -459,7 +453,14 @@ async function cargarProductosAPI() {
           </tr>`).join(''))}
       `,
       Reportes: () => {
-        return `${moduleHeader('Reportes', 'Reportes calculados desde pedido, detalle_pedido, producto, categoria, sucursal y empleado.')}${renderReports()}`;
+        return `${moduleHeader('Reportes', 'Reportes reales desde PostgreSQL con filtros por fecha y sucursal.')}
+          <div class="card mb-3"><div class="card-body"><div class="row g-3 align-items-end">
+            <div class="col-md-3"><label class="form-label">Fecha inicio</label><input class="form-control" type="date" id="reportFechaInicio"></div>
+            <div class="col-md-3"><label class="form-label">Fecha fin</label><input class="form-control" type="date" id="reportFechaFin"></div>
+            <div class="col-md-3"><label class="form-label">Sucursal</label><select class="form-select" id="reportSucursal"><option value="">Todas</option>${sucursales.map(s => `<option value="${s.id_sucursal}">${s.nombre}</option>`).join('')}</select></div>
+            <div class="col-md-3"><button class="btn btn-primary w-100" id="applyReportFilters" type="button">Aplicar filtros</button></div>
+          </div></div></div>
+          <div id="reportsWrap">${renderReports()}</div>`;
       },
     };
 
@@ -478,6 +479,22 @@ async function cargarProductosAPI() {
         document.querySelectorAll('#ordersTableWrap .row-action').forEach(button => {
           button.addEventListener('click', () => handleRowAction(button.dataset.entity, Number(button.dataset.id), button.dataset.label));
         });
+      });
+    }
+    const applyReportFilters = document.getElementById('applyReportFilters');
+    if (applyReportFilters) {
+      applyReportFilters.addEventListener('click', async () => {
+        try {
+          await cargarReportesAPI({
+            fecha_inicio: document.getElementById('reportFechaInicio').value,
+            fecha_fin: document.getElementById('reportFechaFin').value,
+            sucursal_id: document.getElementById('reportSucursal').value
+          });
+          document.getElementById('reportsWrap').innerHTML = renderReports();
+          showToast('Reportes actualizados');
+        } catch (error) {
+          showToast(error.message);
+        }
       });
     }
 
@@ -610,10 +627,14 @@ async function cargarProductosAPI() {
           })
         }),
         sp_nuevo_pedido: async () => { window.location.href = 'index.html'; },
+        cancelar_pendientes_24h: async () => apiRequest('/pedidos/cancelar-pendientes-24h', { method: 'PATCH' }),
       };
 
       const result = await handlers[action]?.();
-      if (action !== 'sp_crear_promocion') {
+      if (action === 'cancelar_pendientes_24h') {
+        await refreshDataAndView('Pedidos');
+        showToast(`${result?.cancelados || 0} pedidos cancelados`);
+      } else if (action !== 'sp_crear_promocion') {
         await refreshDataAndView(getActiveModule() || 'Productos');
         showToast(result?.message || 'Registro guardado correctamente');
       }
@@ -1043,6 +1064,7 @@ async function cargarProductosAPI() {
   (async function initApp() {
     await cargarCatalogosAPI();
     await cargarProductosAPI();
+    await cargarReportesAPI();
     fillSelects();
     renderCategories();
     renderDashboard();

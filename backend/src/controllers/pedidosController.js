@@ -81,6 +81,15 @@ const entregarPedido = async (req, res) => {
   }
 };
 
+const cancelarPendientes24h = async (req, res) => {
+  try {
+    const cancelados = await pedidosService.cancelarPendientes24h();
+    res.json({ ok: true, message: `${cancelados} pedidos fueron cancelados`, data: { cancelados } });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+};
+
 module.exports = {
   obtenerPedidos,
   obtenerDetallePedido,
@@ -90,5 +99,6 @@ module.exports = {
   cancelarPedido,
   prepararPedido,
   marcarPedidoListo,
-  entregarPedido
+  entregarPedido,
+  cancelarPendientes24h
 };

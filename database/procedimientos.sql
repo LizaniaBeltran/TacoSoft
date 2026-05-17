@@ -20,6 +20,162 @@ EXCEPTION
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION sp_reporte_ventas_sucursal(
+    p_fecha_inicio DATE DEFAULT NULL,
+    p_fecha_fin DATE DEFAULT NULL,
+    p_sucursal_id INT DEFAULT NULL
+)
+RETURNS TABLE(sucursal VARCHAR, total_pedidos BIGINT, total_vendido NUMERIC, ticket_promedio NUMERIC)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT s.nombre, COUNT(p.pedido_id), COALESCE(SUM(p.total), 0), COALESCE(AVG(p.total), 0)
+    FROM pedido p
+    INNER JOIN sucursal s ON s.sucursal_id = p.sucursal_id
+    WHERE p.estatus <> 'cancelado'
+      AND (p_fecha_inicio IS NULL OR p.fecha_hora::DATE >= p_fecha_inicio)
+      AND (p_fecha_fin IS NULL OR p.fecha_hora::DATE <= p_fecha_fin)
+      AND (p_sucursal_id IS NULL OR p.sucursal_id = p_sucursal_id)
+    GROUP BY s.sucursal_id, s.nombre
+    ORDER BY total_vendido DESC;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION sp_productos_mas_vendidos(
+    p_fecha_inicio DATE DEFAULT NULL,
+    p_fecha_fin DATE DEFAULT NULL,
+    p_sucursal_id INT DEFAULT NULL
+)
+RETURNS TABLE(producto VARCHAR, categoria VARCHAR, cantidad_vendida BIGINT, total_vendido NUMERIC)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT pr.nombre, c.nombre, COALESCE(SUM(dp.cantidad), 0)::BIGINT, COALESCE(SUM(dp.subtotal), 0)
+    FROM detalle_pedido dp
+    INNER JOIN pedido p ON p.pedido_id = dp.pedido_id
+    INNER JOIN producto pr ON pr.producto_id = dp.producto_id
+    INNER JOIN categoria c ON c.categoria_id = pr.categoria_id
+    WHERE p.estatus <> 'cancelado'
+      AND (p_fecha_inicio IS NULL OR p.fecha_hora::DATE >= p_fecha_inicio)
+      AND (p_fecha_fin IS NULL OR p.fecha_hora::DATE <= p_fecha_fin)
+      AND (p_sucursal_id IS NULL OR p.sucursal_id = p_sucursal_id)
+    GROUP BY pr.producto_id, pr.nombre, c.nombre
+    ORDER BY cantidad_vendida DESC, total_vendido DESC
+    LIMIT 10;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION sp_ventas_categoria(
+    p_fecha_inicio DATE DEFAULT NULL,
+    p_fecha_fin DATE DEFAULT NULL,
+    p_sucursal_id INT DEFAULT NULL
+)
+RETURNS TABLE(categoria VARCHAR, total_vendido NUMERIC)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT c.nombre, COALESCE(SUM(dp.subtotal), 0)
+    FROM detalle_pedido dp
+    INNER JOIN pedido p ON p.pedido_id = dp.pedido_id
+    INNER JOIN producto pr ON pr.producto_id = dp.producto_id
+    INNER JOIN categoria c ON c.categoria_id = pr.categoria_id
+    WHERE p.estatus <> 'cancelado'
+      AND (p_fecha_inicio IS NULL OR p.fecha_hora::DATE >= p_fecha_inicio)
+      AND (p_fecha_fin IS NULL OR p.fecha_hora::DATE <= p_fecha_fin)
+      AND (p_sucursal_id IS NULL OR p.sucursal_id = p_sucursal_id)
+    GROUP BY c.categoria_id, c.nombre
+    ORDER BY total_vendido DESC;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION sp_rendimiento_empleados(
+    p_fecha_inicio DATE DEFAULT NULL,
+    p_fecha_fin DATE DEFAULT NULL,
+    p_sucursal_id INT DEFAULT NULL
+)
+RETURNS TABLE(empleado VARCHAR, pedidos_atendidos BIGINT, total_vendido NUMERIC, ticket_promedio NUMERIC)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT e.nombre_completo, COUNT(p.pedido_id), COALESCE(SUM(p.total), 0), COALESCE(AVG(p.total), 0)
+    FROM pedido p
+    INNER JOIN empleado e ON e.empleado_id = p.empleado_id
+    WHERE p.estatus <> 'cancelado'
+      AND (p_fecha_inicio IS NULL OR p.fecha_hora::DATE >= p_fecha_inicio)
+      AND (p_fecha_fin IS NULL OR p.fecha_hora::DATE <= p_fecha_fin)
+      AND (p_sucursal_id IS NULL OR p.sucursal_id = p_sucursal_id)
+    GROUP BY e.empleado_id, e.nombre_completo
+    HAVING COUNT(p.pedido_id) > 5
+    ORDER BY total_vendido DESC;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION sp_comparativo_mensual(
+    p_fecha_inicio DATE DEFAULT NULL,
+    p_fecha_fin DATE DEFAULT NULL,
+    p_sucursal_id INT DEFAULT NULL
+)
+RETURNS TABLE(mes TEXT, sucursal VARCHAR, total_vendido NUMERIC)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT TO_CHAR(DATE_TRUNC('month', p.fecha_hora), 'YYYY-MM'), s.nombre, COALESCE(SUM(p.total), 0)
+    FROM pedido p
+    INNER JOIN sucursal s ON s.sucursal_id = p.sucursal_id
+    WHERE p.estatus <> 'cancelado'
+      AND (p_fecha_inicio IS NULL OR p.fecha_hora::DATE >= p_fecha_inicio)
+      AND (p_fecha_fin IS NULL OR p.fecha_hora::DATE <= p_fecha_fin)
+      AND (p_sucursal_id IS NULL OR p.sucursal_id = p_sucursal_id)
+    GROUP BY DATE_TRUNC('month', p.fecha_hora), s.sucursal_id, s.nombre
+    ORDER BY mes, sucursal;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION sp_productos_sin_movimiento(
+    p_fecha_inicio DATE DEFAULT NULL,
+    p_fecha_fin DATE DEFAULT NULL,
+    p_sucursal_id INT DEFAULT NULL
+)
+RETURNS TABLE(producto VARCHAR, categoria VARCHAR, estatus VARCHAR)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT pr.nombre, c.nombre, pr.estatus
+    FROM producto pr
+    INNER JOIN categoria c ON c.categoria_id = pr.categoria_id
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM detalle_pedido dp
+        INNER JOIN pedido p ON p.pedido_id = dp.pedido_id
+        WHERE dp.producto_id = pr.producto_id
+          AND p.estatus <> 'cancelado'
+          AND (p_fecha_inicio IS NULL OR p.fecha_hora::DATE >= p_fecha_inicio)
+          AND (p_fecha_fin IS NULL OR p.fecha_hora::DATE <= p_fecha_fin)
+          AND (p_sucursal_id IS NULL OR p.sucursal_id = p_sucursal_id)
+    )
+    ORDER BY pr.nombre;
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE sp_cancelar_pedidos_pendientes_24h(INOUT p_cancelados INT)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    UPDATE pedido
+    SET estatus = 'cancelado'
+    WHERE estatus = 'pendiente'
+      AND fecha_hora < NOW() - INTERVAL '24 hours';
+
+    GET DIAGNOSTICS p_cancelados = ROW_COUNT;
+END;
+$$;
+
 
 CREATE OR REPLACE PROCEDURE sp_actualizar_sucursal(
     p_id INT,
@@ -343,8 +499,8 @@ BEGIN
         RAISE EXCEPTION 'El pedido no existe';
     END IF;
 
-    IF v_estatus = 'entregado' THEN
-        RAISE EXCEPTION 'No se puede cancelar un pedido entregado';
+    IF v_estatus NOT IN ('pendiente', 'preparando') THEN
+        RAISE EXCEPTION 'Solo se pueden cancelar pedidos pendientes o preparando';
     END IF;
 
     UPDATE pedido
@@ -354,6 +510,72 @@ BEGIN
 EXCEPTION
     WHEN OTHERS THEN
         RAISE EXCEPTION 'Error al cancelar pedido: %', SQLERRM;
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE sp_preparar_pedido(
+    p_pedido_id INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_estatus VARCHAR(30);
+BEGIN
+    SELECT estatus INTO v_estatus FROM pedido WHERE pedido_id = p_pedido_id;
+
+    IF v_estatus IS NULL THEN
+        RAISE EXCEPTION 'El pedido no existe';
+    END IF;
+
+    IF v_estatus <> 'pendiente' THEN
+        RAISE EXCEPTION 'Solo los pedidos pendientes pueden pasar a preparando';
+    END IF;
+
+    UPDATE pedido SET estatus = 'preparando' WHERE pedido_id = p_pedido_id;
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE sp_marcar_pedido_listo(
+    p_pedido_id INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_estatus VARCHAR(30);
+BEGIN
+    SELECT estatus INTO v_estatus FROM pedido WHERE pedido_id = p_pedido_id;
+
+    IF v_estatus IS NULL THEN
+        RAISE EXCEPTION 'El pedido no existe';
+    END IF;
+
+    IF v_estatus <> 'preparando' THEN
+        RAISE EXCEPTION 'Solo los pedidos preparando pueden pasar a listo';
+    END IF;
+
+    UPDATE pedido SET estatus = 'listo' WHERE pedido_id = p_pedido_id;
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE sp_entregar_pedido(
+    p_pedido_id INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_estatus VARCHAR(30);
+BEGIN
+    SELECT estatus INTO v_estatus FROM pedido WHERE pedido_id = p_pedido_id;
+
+    IF v_estatus IS NULL THEN
+        RAISE EXCEPTION 'El pedido no existe';
+    END IF;
+
+    IF v_estatus <> 'listo' THEN
+        RAISE EXCEPTION 'Solo los pedidos listos pueden pasar a entregado';
+    END IF;
+
+    UPDATE pedido SET estatus = 'entregado' WHERE pedido_id = p_pedido_id;
 END;
 $$;
 
